@@ -1,0 +1,49 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX sd: <http://www.w3.org/ns/sparql-service-description#>
+PREFIX foaf: <http://xmlns.com/foaf/0.1/>
+PREFIX sf: <http://ldf.fi/functions#>
+
+SELECT *
+
+WHERE {
+  ?pids___id a sd:Dataset
+  OPTIONAL {?pids___id dct:title ?title }
+  OPTIONAL {?pids___id dct:license ?license_URL }
+  OPTIONAL {?pids___id dct:subject ?tag_string }
+  OPTIONAL {
+    ?pids___id dct:description ?notes___fin
+    FILTER ( LANG(?notes___fin) = 'fi' )
+  }
+  OPTIONAL {
+    ?pids___id dct:description ?notes___eng
+    FILTER ( LANG(?notes___eng) = 'en' )
+  }
+  OPTIONAL {?pids___id foaf:homepage ?direct_download_URL }
+
+  OPTIONAL {?pids___id dct:publisher/sf:preferredLanguageLiteral ( skos:prefLabel 'fi' 'en' '' ?contact___name ) }
+  OPTIONAL {?pids___id dct:publisher/foaf:mbox ?contact___email }
+  OPTIONAL {?pids___id dct:publisher/foaf:homepage ?contact___URL }
+  OPTIONAL {?pids___id dct:publisher/foaf:phone ?contact___phone }
+
+  BIND( "author" as ?agent1___role ) .
+  OPTIONAL {?pids___id dct:creator ?agent1_name }
+  BIND( "owner" as ?agent2___role ) .
+  OPTIONAL {?pids___id dct:rightsHolder/sf:preferredLanguageLiteral ( skos:prefLabel 'fi' 'en' '' ?agent2___name ) }
+
+  BIND ( "primary" as ?pids___type )
+  BIND ( "direct_download" as ?availability )
+  BIND ( "other" as ?license_id )
+  BIND ( now() as ?version )
+  BIND ( "10076-aalto-yliopisto" as ?owner_org )
+  BIND( "False" as ?langdis )
+  #BIND (EXISTS { ?pids___id ?p ?lit . FILTER ( lang(?lit) = "fi" ) . } as ?fin)
+  #BIND (EXISTS { ?pids___id ?p ?lit . FILTER ( lang(?lit) = "en" ) . } as ?eng)
+  BIND ( "fin,eng" as ?language )
+  BIND ( <http://www.yso.fi/onto/okm-tieteenala/ta113> as ?discipline ) .
+  BIND ( "True" as ?accept_terms )
+}
+ORDER BY ?title
