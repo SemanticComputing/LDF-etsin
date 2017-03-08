@@ -3,14 +3,14 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 PREFIX dc: <http://purl.org/dc/elements/1.1/>
 PREFIX dct: <http://purl.org/dc/terms/>
-PREFIX sd: <http://www.w3.org/ns/sparql-service-description#>
+PREFIX ssd: <http://www.w3.org/ns/sparql-service-description#>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 PREFIX sf: <http://ldf.fi/functions#>
 
 SELECT *
 
 WHERE {
-  ?pids___id a sd:Dataset
+  ?pids___id a ssd:Dataset
   OPTIONAL {
     ?pids___id dct:title ?title___fin
     FILTER ( LANG(?title___fin) = 'fi' )

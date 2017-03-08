@@ -3,9 +3,11 @@
 """
 Create Etsin API calls from LDF.fi dataset descriptions
 """
+import argparse
 import copy
 from collections import defaultdict
 import json
+from pprint import pprint
 
 import requests
 from SPARQLWrapper import JSON, SPARQLWrapper
@@ -38,6 +40,11 @@ def format_sparql_results(sparql_res):
 
 
 def format_dataset_for_api(dataset):
+    """
+    Format a dataset dictionary
+    :param dataset:
+    :return:
+    """
     formatted = defaultdict(list)
 
     # BASIC PROCESSING TO LISTS OF DICTS STRUCTURE
@@ -91,8 +98,10 @@ def format_dataset_for_api(dataset):
     if 'accept_terms' in formatted:
         formatted['accept-terms'] = formatted.pop('accept_terms')
 
-    if 'tag_string' in formatted:
-        formatted['tag_string'] = ", ".join(formatted['tag_string'])
+    tags = formatted.get('tag_string')
+    if tags:
+        if type(tags) == list:
+            formatted['tag_string'] = ", ".join(tags)
 
     # TRANSFORM TITLE AND NOTES INTO STRINGS
 
@@ -102,15 +111,36 @@ def format_dataset_for_api(dataset):
     licenses = requests.get('https://etsin.avointiede.fi/licenses.json')
     licenses = licenses.json()
 
-    lic_url = formatted.get('license_URL')
-    for lic in licenses:
-        # lic['id'], lic['url'])
-        if lic['url'] in [lic_url, lic_url.replace('http:', 'https:')]:
-            formatted['license_id'] = lic['id']
-            formatted.pop('license_URL')
+    lic_urls = formatted.get('license_URL')
+    if type(lic_urls) == str:
+        lic_urls = [lic_urls]
+
+    found = False
+    if lic_urls:
+        for (index, lic_url) in enumerate(lic_urls):
+            for lic in licenses:
+                if lic['url'] in [lic_url, lic_url.replace('http:', 'https:')]:
+                    formatted['license_id'] = lic['id']
+                    if len(lic_urls) > 1:
+                        formatted['license_URL'] = lic_urls.copy()
+                        formatted['license_URL'].pop(index)
+                    else:
+                        formatted.pop('license_URL')
+                    found = True
+                    break
+            if found:
+                break
 
     return json.dumps(formatted).replace("'", '\\"')
 
+
+##############################
+
+# if __name__ == '__main__':
+
+argparser = argparse.ArgumentParser(description="Convert LDF.fi dataset metadata to Etsin format")
+argparser.add_argument("dataset", help="Dataset URI, or all for all datasets")
+args = argparser.parse_args()
 
 sparql = SPARQLWrapper(ENDPOINT)
 with open('get_datasets.sparql', 'r') as f:
@@ -127,15 +157,18 @@ except ValueError:
 
 datasets = format_sparql_results(results)
 
-# print()
-# print(datasets['http://ldf.fi/warsa'])
-final_dataset = format_dataset_for_api(datasets['http://ldf.fi/warsa'])
-print()
-print('DATASET:')
-import pprint
-pprint.pprint(json.loads(final_dataset))
-print()
-print()
-print('API CALL:')
-print('curl "https://etsin.avointiede.fi/api/3/action/package_create" -d \'{dataset}\' -H "Authorization: MY_PRIVATE_KEY"'
-      .format(dataset=final_dataset))
+if args.dataset == 'all':
+    used_datasets = datasets
+else:
+    used_datasets = {args.dataset: datasets.get(args.dataset)}
+
+for (uri, dataset) in used_datasets.items():
+    final_dataset = format_dataset_for_api(dataset)
+
+    print('\n\n')
+    print('DATASET {uri}:'.format(uri=uri))
+    pprint(json.loads(final_dataset))
+    print()
+    print('API CALL:')
+    print('curl "https://etsin.avointiede.fi/api/3/action/package_create" -d \'{dataset}\' -H "Authorization: MY_PRIVATE_KEY"'
+          .format(dataset=final_dataset))
