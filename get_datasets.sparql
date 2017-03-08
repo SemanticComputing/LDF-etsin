@@ -11,7 +11,14 @@ SELECT *
 
 WHERE {
   ?pids___id a sd:Dataset
-  OPTIONAL {?pids___id dct:title ?title }
+  OPTIONAL {
+    ?pids___id dct:title ?title___fin
+    FILTER ( LANG(?title___fin) = 'fi' )
+  }
+  OPTIONAL {
+    ?pids___id dct:title ?title___eng
+    FILTER ( LANG(?title___eng) = 'en' )
+  }
   OPTIONAL {?pids___id dct:license ?license_URL }
   OPTIONAL {?pids___id dct:subject ?tag_string }
   OPTIONAL {
@@ -29,10 +36,10 @@ WHERE {
   OPTIONAL {?pids___id dct:publisher/foaf:homepage ?contact___URL }
   OPTIONAL {?pids___id dct:publisher/foaf:phone ?contact___phone }
 
-  BIND( "author" as ?agent1___role ) .
-  OPTIONAL {?pids___id dct:creator ?agent1_name }
-  BIND( "owner" as ?agent2___role ) .
-  OPTIONAL {?pids___id dct:rightsHolder/sf:preferredLanguageLiteral ( skos:prefLabel 'fi' 'en' '' ?agent2___name ) }
+  BIND( "author" as ?agent0___role ) .
+  OPTIONAL {?pids___id dct:creator/sf:preferredLanguageLiteral ( skos:prefLabel 'fi' 'en' '' ?agent0___name ) }
+  BIND( "owner" as ?agent1___role ) .
+  OPTIONAL {?pids___id dct:rightsHolder/sf:preferredLanguageLiteral ( skos:prefLabel 'fi' 'en' '' ?agent1___name ) }
 
   BIND ( "primary" as ?pids___type )
   BIND ( "direct_download" as ?availability )
