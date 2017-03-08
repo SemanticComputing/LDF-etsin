@@ -7,6 +7,7 @@ import copy
 from collections import defaultdict
 import json
 
+import requests
 from SPARQLWrapper import JSON, SPARQLWrapper
 
 ENDPOINT = 'http://ldf.fi/service-descriptions/sparql'
@@ -83,7 +84,32 @@ def format_dataset_for_api(dataset):
                     if len(iv) > 1:
                         print('Found a list with length > 1 when there should be only one item')
 
-    return json.dumps(formatted)
+    # ADDITIONAL POST PROCESSING
+
+    formatted['version'] = formatted['version'][:19]
+
+    if 'accept_terms' in formatted:
+        formatted['accept-terms'] = formatted.pop('accept_terms')
+
+    if 'tag_string' in formatted:
+        formatted['tag_string'] = ", ".join(formatted['tag_string'])
+
+    # TRANSFORM TITLE AND NOTES INTO STRINGS
+
+    formatted['title'] = str(formatted['title'][0])
+    formatted['notes'] = str(formatted['notes'][0])
+
+    licenses = requests.get('https://etsin.avointiede.fi/licenses.json')
+    licenses = licenses.json()
+
+    lic_url = formatted.get('license_URL')
+    for lic in licenses:
+        # lic['id'], lic['url'])
+        if lic['url'] in [lic_url, lic_url.replace('http:', 'https:')]:
+            formatted['license_id'] = lic['id']
+            formatted.pop('license_URL')
+
+    return json.dumps(formatted).replace("'", '\\"')
 
 
 sparql = SPARQLWrapper(ENDPOINT)
