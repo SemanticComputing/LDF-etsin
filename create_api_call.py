@@ -60,10 +60,11 @@ def format_dataset_for_api(dataset):
             else:
                 index = 0
 
-            if len(formatted[keys[0]]) > index:
-                formatted[keys[0]][index].update({keys[1]: v})
-            else:
-                formatted[keys[0]].append({keys[1]: v})
+            if len(formatted[keys[0]]) <= index:
+                for temp in range(index - len(formatted[keys[0]]) + 1):
+                    formatted[keys[0]].append({})
+
+            formatted[keys[0]][index].update({keys[1]: v})
 
     # POST PROCESS INNER DICTS WITH MULTIPLE NAMES, SPLIT THEM TO NEW DICTS
 
@@ -75,9 +76,9 @@ def format_dataset_for_api(dataset):
                         for d_index, duplicate in enumerate(iv[1:]):
 
                             new_dict = copy.deepcopy(formatted[k][idict_index])
-                            new_dict[ik].pop(0)
+                            new_dict[ik] = [new_dict[ik][1]]
 
-                            formatted[k][idict_index][ik].pop(d_index + 1)
+                            formatted[k][idict_index][ik].pop(1)
                             formatted[k].append(new_dict)
 
     # POST PROCESS INNER LISTS OF ONE ITEM TO JUST THE ITEMS
@@ -89,7 +90,7 @@ def format_dataset_for_api(dataset):
                     # Assuming iv is a list
                     formatted[k][idict_index][ik] = iv[0]
                     if len(iv) > 1:
-                        print('Found a list with length > 1 when there should be only one item')
+                        print('Found a list with length > 1 when there should be only one item: ', k, iv)
 
     # ADDITIONAL POST PROCESSING
 
@@ -142,7 +143,8 @@ def format_dataset_for_api(dataset):
 
 argparser = argparse.ArgumentParser(description="Convert LDF.fi dataset metadata to Etsin format")
 argparser.add_argument("dataset", help="Dataset URI, or 'all' for all datasets")
-argparser.add_argument("--apikey", default='MY_PRIVATE_KEY', help="Your personal API key.")
+argparser.add_argument("--apikey", default='MY_PRIVATE_KEY', help="Your personal API key")
+argparser.add_argument("-v", action='store_true', help="Verbose output")
 args = argparser.parse_args()
 
 sparql = SPARQLWrapper(ENDPOINT)
@@ -166,12 +168,15 @@ else:
     used_datasets = {args.dataset: datasets.get(args.dataset)}
 
 for (uri, dataset) in used_datasets.items():
+    if args.v:
+        print('\n\n')
+        print('DATASET {uri}:'.format(uri=uri))
+
     final_dataset = format_dataset_for_api(dataset)
 
-    print('\n\n')
-    print('DATASET {uri}:'.format(uri=uri))
-    pprint(json.loads(final_dataset))
-    print()
-    print('API CALL:')
+    if args.v:
+        pprint(json.loads(final_dataset))
+        print()
+        print('API CALL:')
     print('curl "https://etsin.avointiede.fi/api/3/action/package_create" -d \'{dataset}\' -H "Authorization: {key}"'
           .format(dataset=final_dataset, key=args.apikey))
