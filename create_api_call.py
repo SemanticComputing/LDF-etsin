@@ -14,7 +14,6 @@ from SPARQLWrapper import JSON, SPARQLWrapper
 
 ENDPOINT = 'http://ldf.fi/service-descriptions/sparql'
 
-
 def format_sparql_results(sparql_res):
     """
     Format SPARQL results to a dict of lists grouped by dataset URI
@@ -41,9 +40,10 @@ def format_sparql_results(sparql_res):
 
 def format_dataset_for_api(dataset):
     """
-    Format a dataset dictionary
-    :param dataset:
-    :return:
+    Format a dataset dictionary to a JSON string, following the Etsin API format
+
+    :param dataset: nested dictionary
+    :return: JSON dataset as a string
     """
     formatted = defaultdict(list)
 
@@ -108,6 +108,8 @@ def format_dataset_for_api(dataset):
     formatted['title'] = str(formatted['title'][0])
     formatted['notes'] = str(formatted['notes'][0])
 
+    # FETCH LICENSES AND TRY TO MATCH THEM BY URLs
+
     licenses = requests.get('https://etsin.avointiede.fi/licenses.json')
     licenses = licenses.json()
 
@@ -139,7 +141,8 @@ def format_dataset_for_api(dataset):
 # if __name__ == '__main__':
 
 argparser = argparse.ArgumentParser(description="Convert LDF.fi dataset metadata to Etsin format")
-argparser.add_argument("dataset", help="Dataset URI, or all for all datasets")
+argparser.add_argument("dataset", help="Dataset URI, or 'all' for all datasets")
+argparser.add_argument("--apikey", default='MY_PRIVATE_KEY', help="Your personal API key.")
 args = argparser.parse_args()
 
 sparql = SPARQLWrapper(ENDPOINT)
@@ -170,5 +173,5 @@ for (uri, dataset) in used_datasets.items():
     pprint(json.loads(final_dataset))
     print()
     print('API CALL:')
-    print('curl "https://etsin.avointiede.fi/api/3/action/package_create" -d \'{dataset}\' -H "Authorization: MY_PRIVATE_KEY"'
-          .format(dataset=final_dataset))
+    print('curl "https://etsin.avointiede.fi/api/3/action/package_create" -d \'{dataset}\' -H "Authorization: {key}"'
+          .format(dataset=final_dataset, key=args.apikey))
