@@ -31,6 +31,7 @@ WHERE {
   }
   OPTIONAL {?pids___id foaf:homepage ?direct_download_URL }
 
+  # TODO: Doesn't work properly with multiple publishers
   OPTIONAL {?pids___id dct:publisher/sf:preferredLanguageLiteral ( skos:prefLabel 'fi' 'en' '' ?contact___name ) }
   OPTIONAL {?pids___id dct:publisher/foaf:mbox ?contact___email }
   OPTIONAL {?pids___id dct:publisher/foaf:homepage ?contact___URL }

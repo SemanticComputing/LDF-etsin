@@ -14,6 +14,7 @@ from SPARQLWrapper import JSON, SPARQLWrapper
 
 ENDPOINT = 'http://ldf.fi/service-descriptions/sparql'
 
+
 def format_sparql_results(sparql_res):
     """
     Format SPARQL results to a dict of lists grouped by dataset URI
@@ -180,3 +181,4 @@ for (uri, dataset) in used_datasets.items():
         print('API CALL:')
     print('curl "https://etsin.avointiede.fi/api/3/action/package_create" -d \'{dataset}\' -H "Authorization: {key}"'
           .format(dataset=final_dataset, key=args.apikey))
+    print()
